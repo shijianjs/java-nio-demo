@@ -36,7 +36,7 @@ com.example.javaniodemo.JavaNioDemoApplication
 所在包：test下的com.example.javaniodemo.demo
 
 - 纯java
-  - 纯nio
+  - 纯nio、nio2
     - 这里踩了下坑，网上大部分教程读作nio，写成bio，包括oracle官方教程、baeldung大佬的教程、各路csdn文章，根本就没必要非阻塞效果、一个io严格对应1+个线程
     - 这里的demo代码才是nio的正确写法
   - jdk11 http
