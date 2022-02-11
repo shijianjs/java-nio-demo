@@ -13,8 +13,13 @@ bio对照组：java socket io、hutool HttpUtil、spring cloud feign；
 
 要求：
 - 由于各种框架产生的调度线程，我们不能保证线程全部是自己产生的，用jprofile看下，线程总数量小于10就说明没问题；
+  - 错误示例：logback-1、logback-2 ...
 - 如果线程总数量大于99，说明用的是阻塞式，没起到非阻塞的作用；
+  - 错误示例：如果java nio2的没设置AsynchronousChannelGroup，那么每open一个socket都会新开一个线程；
 - 如果总时长大于15s，或者总的成功响应次数小于200次，说明并行没达到要求；
+  - 错误示例：我这里试验vertx出现过，默认的并行数上限是5，需要配置；
+- 如果总时长小于10s，说明服务器单词请求响应时长没有5s，或者请求次数不到200，或者并行数大于100了
+  - 错误示例：我这里试验webflux出现过，操作符效果和预期不一致，导致200并发、单并发1次请求的效果
 
 ## demo代码
 这里的示例为了使单独的类都是有效代码，阅读代码更直观，跨类不做逻辑复用、不做方法提取。
@@ -69,7 +74,7 @@ com.example.javaniodemo.JavaNioDemoApplication
   - 解答：其实无所谓怎么说，先写代码验证，通过代码跑的结果看特性，通过这里的代码可以看出来：
     - 官方并没有什么同步异步的说法，nio2仅仅是nio新封装了几个更易用的api；
       - 当然了，关于文件系统读写有了些新功能，这里暂不讨论，只讨论socket、网络io，基本上我们只写无状态应用。
-    - 跟spring mvc封装servlet、reactor-netty封装netty、netty封装nio类似，其实用起来写代码的效果也跟netty封装nio类似，算是java自带的netty框架。
+    - 跟spring mvc封装servlet、reactor-netty封装netty、netty封装nio类似，nio2其实用起来写代码的效果也跟netty封装nio类似，nio2算是java自带的netty框架。
     - 只用nio依旧能实现上述功能，说明nio并不是同步的；
       - 跑在一个循环里面，异步逻辑由selector制造，只不过写法巨麻烦。
     - 使用nio2实现上面功能更简单，写法与netty类似。
