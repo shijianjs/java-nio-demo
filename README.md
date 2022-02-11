@@ -82,6 +82,19 @@ com.example.javaniodemo.JavaNioDemoApplication
       - 跑在一个循环里面，异步逻辑由selector制造，只不过写法巨麻烦。
     - 使用nio2实现上面功能更简单，写法与netty类似。
 
+### 拿netty写代码遇到future直接就sync()了
+可以看sync()方法的注释
+```
+    /**
+     * Waits for this future until it is done, and rethrows the cause of the failure if this future
+     * failed.
+     */
+    Future<V> sync() throws InterruptedException;
+```
+这个方法是阻塞线程、直到future完成，调了这个方法使用netty就和非阻塞无缘了，就是用bio的方式用netty，使用效果和bio一致。
+
+估计是因为类似差不多的原因，vertx的future直接就不提供get()这样的阻塞线程等结果的方法。
+
 ## 非阻塞代码里面加入阻塞式的会怎样 
 不是靠猜，写代码验证
 
