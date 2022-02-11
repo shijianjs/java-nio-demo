@@ -2,8 +2,7 @@
 [维基百科 - Java NIO](https://zh.wikipedia.org/wiki/Java_NIO)
 
 以多种方式实现非阻塞demo（单线程100并发），实现的方式有：
-java nio、java nio2、jdk11 HttpClient、Spring WebFlux WebClient、Vert.x HttpClient、
-kotlin coroutine + ktor + cio、kotlin coroutine + webflux；
+java nio、java nio2、jdk11 HttpClient、纯Netty、Spring WebFlux WebClient、Vert.x HttpClient、kotlin coroutine + ktor + cio、kotlin coroutine + webflux；
 
 bio对照组：java socket io、hutool HttpUtil、spring cloud feign；
 
