@@ -50,10 +50,10 @@ com.example.javaniodemo.JavaNioDemoApplication
 - 【对照组】bio
   - 纯socket
   - hutool HttpUtil 
-    - 以下客户端效果相同，没做实现：
-      - okhttp
-      - apache http
-      - feign
+  - feign
+  - 以下客户端效果相同，没做实现：
+     - okhttp
+     - apache http
 
 #### 代码结构说明
 - setUp：初始化junit单元测试，做些配置
