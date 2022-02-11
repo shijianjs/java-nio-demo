@@ -11,7 +11,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 
 /**
- * 【错误写法】
  *
  * https://blog.csdn.net/u011381576/article/details/79876754
  */

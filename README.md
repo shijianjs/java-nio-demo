@@ -37,7 +37,10 @@ com.example.javaniodemo.JavaNioDemoApplication
 
 - 纯java
   - 纯nio [JavaNioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaNioDemo.java)、nio2 [JavaNio2Demo](src/test/kotlin/com/example/javaniodemo/demo/JavaNio2Demo.java)
-    - 这里踩了下坑，网上大部分教程读作nio，写成bio，包括oracle官方教程、baeldung大佬的教程、各路csdn文章，根本就没必要非阻塞效果、一个io严格对应1+个线程
+    - 这里踩了下坑，网上大部分教程读作nio，写成bio，根本就没有非阻塞效果、一个io严格对应1+个线程，包括
+      - [oracle官方教程](https://docs.oracle.com/en/java/javase/17/core/non-blocking-time-server-nio-example.html)
+      - [baeldung大佬的教程](https://www.baeldung.com/java-nio2-async-socket-channel)
+      - 各路csdn文章
     - 这里的demo代码才是nio的正确写法
   - jdk11 http [Jdk11HttpClientNioDemo](src/test/kotlin/com/example/javaniodemo/demo/Jdk11HttpClientNioDemo.java)
 - java语法下的外部库回调式、外置事件循环io框架（函数式非阻塞）
