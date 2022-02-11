@@ -33,24 +33,24 @@ com.example.javaniodemo.JavaNioDemoApplication
 也可以用spring boot + tomcat + Thread.sleep(5000)实现下服务端，jprofile看下效果。
 
 ### 客户端并发实现代码
-所在包：test下的com.example.javaniodemo.demo
+所在包：test下的[com.example.javaniodemo.demo](./src/test/kotlin/com/example/javaniodemo/demo)
 
 - 纯java
-  - 纯nio、nio2
+  - 纯nio [JavaNioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaNioDemo.java)、nio2 [JavaNio2Demo](src/test/kotlin/com/example/javaniodemo/demo/JavaNio2Demo.java)
     - 这里踩了下坑，网上大部分教程读作nio，写成bio，包括oracle官方教程、baeldung大佬的教程、各路csdn文章，根本就没必要非阻塞效果、一个io严格对应1+个线程
     - 这里的demo代码才是nio的正确写法
-  - jdk11 http
+  - jdk11 http [Jdk11HttpClientNioDemo](src/test/kotlin/com/example/javaniodemo/demo/Jdk11HttpClientNioDemo.java)
 - java语法下的外部库回调式、外置事件循环io框架（函数式非阻塞）
-  - 纯netty
-  - spring mono
-  - Vert.x
+  - 纯netty [NettyNioDemo](src/test/kotlin/com/example/javaniodemo/demo/NettyNioDemo.java)
+  - spring mono [SpringWebClientNioDemo](src/test/kotlin/com/example/javaniodemo/demo/SpringWebClientNioDemo.java)
+  - Vert.x [VertxHttpClientNioDemo](src/test/kotlin/com/example/javaniodemo/demo/VertxHttpClientNioDemo.java)
 - kotlin协程
-  - mono coroutine
-  - ktor
+  - mono coroutine [CoroutineMonoNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineMonoNioDemo.kt)
+  - ktor [CoroutineKtorNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineKtorNioDemo.kt)
 - 【对照组】bio
-  - 纯socket
-  - hutool HttpUtil 
-  - feign
+  - 纯socket [JavaBioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaBioDemo.java)
+  - hutool HttpUtil [JavaHutoolBioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaHutoolBioDemo.java)
+  - feign [JavaFeignBioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaFeignBioDemo.java)
   - 以下客户端效果相同，没做实现：
      - okhttp
      - apache http
