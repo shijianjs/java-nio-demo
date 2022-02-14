@@ -2,7 +2,7 @@
 [维基百科 - Java NIO](https://zh.wikipedia.org/wiki/Java_NIO)
 
 以多种方式实现非阻塞demo（单线程100并发），实现的方式有：
-java nio、java nio2、jdk11 HttpClient、纯Netty、Spring WebFlux WebClient、Vert.x HttpClient、kotlin coroutine + ktor + cio、kotlin coroutine + webflux；
+java nio、java nio2、jdk11 HttpClient、纯Netty、Spring WebFlux WebClient、Vert.x HttpClient、kotlin coroutine + ktor、kotlin coroutine + cio、kotlin coroutine + webflux；
 
 bio对照组：java socket io、hutool HttpUtil、spring cloud feign；
 
@@ -35,7 +35,8 @@ com.example.javaniodemo.JavaNioDemoApplication
 所在包：test下的[com.example.javaniodemo.demo](./src/test/kotlin/com/example/javaniodemo/demo)
 
 - 纯java
-  - 纯nio [JavaNioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaNioDemo.java)、nio2 [JavaNio2Demo](src/test/kotlin/com/example/javaniodemo/demo/JavaNio2Demo.java)
+  - 纯nio [JavaNioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaNioDemo.java)
+  - 纯nio2 [JavaNio2Demo](src/test/kotlin/com/example/javaniodemo/demo/JavaNio2Demo.java)
     - 这里踩了下坑，网上大部分教程读作nio，写成bio，根本就没有非阻塞效果、一个io严格对应1+个线程，包括
       - [oracle官方教程](https://docs.oracle.com/en/java/javase/17/core/non-blocking-time-server-nio-example.html)
       - [baeldung大佬的教程](https://www.baeldung.com/java-nio2-async-socket-channel)
@@ -49,6 +50,8 @@ com.example.javaniodemo.JavaNioDemoApplication
 - kotlin协程
   - mono coroutine [CoroutineMonoNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineMonoNioDemo.kt)
   - ktor [CoroutineKtorNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineKtorNioDemo.kt)
+  - 纯CIO [CoroutineCioNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineCioNioDemo.kt)
+    - 可以对比下java bio的写法，几乎一模一样；也就是说kt下可以用bio的写法写nio
 - 【对照组】bio
   - 纯socket [JavaBioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaBioDemo.java)
   - hutool HttpUtil [JavaHutoolBioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaHutoolBioDemo.java)

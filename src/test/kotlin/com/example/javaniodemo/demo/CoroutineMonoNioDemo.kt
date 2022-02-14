@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.client.reactive.ReactorResourceFactory
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.awaitBody
 import reactor.netty.resources.LoopResources
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -75,7 +76,6 @@ class CoroutineMonoNioDemo : ApiRequestCoroutine<String> {
         webClient.get()
             .uri("http://localhost:8080/delay5s")
             .retrieve()
-            .bodyToMono(String::class.java)
-            .awaitSingle()
+            .awaitBody()
 
 }

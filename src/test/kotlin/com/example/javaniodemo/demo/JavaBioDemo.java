@@ -48,7 +48,8 @@ public class JavaBioDemo implements ApiRequest<String> {
                     length = Integer.parseInt(line.split(":")[1].trim());
                 }
             }
-            // 这里的实现有点问题
+            // 这里的实现有点问题，Buffered之后内部的InputStream就读不出来了，Reader又不支持byte[]，
+            // 然而length是byte[]的length，不是char[]的length，这个示例里面倒是无所谓了
             final char[] chars = new char[length];
             reader.read(chars,0,length);
             return new String(chars);

@@ -19,10 +19,12 @@ class CoroutineKtorNioDemo :ApiRequestCoroutine<String>{
     lateinit var client: HttpClient
     @BeforeEach
     internal fun setUp() {
-        client = HttpClient(CIO) {
-            engine {
-                threadsCount = 1
-            }
+        client = singleThreadClient()
+    }
+
+    private fun singleThreadClient() = HttpClient(CIO) {
+        engine {
+            threadsCount = 1
         }
     }
 
