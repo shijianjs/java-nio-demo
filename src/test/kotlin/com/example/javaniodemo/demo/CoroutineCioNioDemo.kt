@@ -78,7 +78,7 @@ class CoroutineCioNioDemo :ApiRequestCoroutine<String>{
                 line = requireNotNull(input.readUTF8Line())
                 // System.out.println(line);
                 if (line.startsWith("Content-Length:")) {
-                    length = line.split(":".toRegex()).toTypedArray()[1].trim { it <= ' ' }.toInt()
+                    length = line.split(":".toRegex())[1].trim().toInt()
                 }
             }
             val bodyBytes = ByteArray(length)
