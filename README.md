@@ -108,3 +108,6 @@ com.example.javaniodemo.JavaNioDemoApplication
 HttpUtil.get("http://localhost:8080/delay5s");
 ```
 
+## TODO
+- [ ] coroutine对接nio2，也可以叫《My CIO》
+- [ ] nio通过按顺序多次设置监听，解决循环空转问题
