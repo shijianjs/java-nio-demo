@@ -23,7 +23,6 @@ bio对照组：java socket io、hutool HttpUtil、spring cloud feign；
 ## demo代码
 这里的示例为了使单独的类都是有效代码，阅读代码更直观，跨类不做逻辑复用、不做方法提取。
 
-
 ### 服务端：
 com.example.javaniodemo.JavaNioDemoApplication
 直接用webflux+coroutine，这里充当公用服务，不做任何修改。
