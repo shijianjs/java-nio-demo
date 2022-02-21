@@ -2,7 +2,7 @@
 [维基百科 - Java NIO](https://zh.wikipedia.org/wiki/Java_NIO)
 
 以多种方式实现非阻塞demo（单线程100并发），实现的方式有：
-java nio、java nio2、jdk11 HttpClient、纯Netty、Spring WebFlux WebClient、Vert.x HttpClient、kotlin coroutine + ktor、kotlin coroutine + cio、kotlin coroutine + webflux；
+java nio、java nio2、jdk11 HttpClient、纯Netty、Spring WebFlux WebClient、Vert.x HttpClient、kotlin coroutine + ktor、kotlin coroutine + cio、kotlin coroutine + webflux、kotlin coroutine + nio2；
 
 bio对照组：java socket io、hutool HttpUtil、spring cloud feign；
 
@@ -52,6 +52,11 @@ com.example.javaniodemo.JavaNioDemoApplication
   - ktor [CoroutineKtorNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineKtorNioDemo.kt)
   - 纯CIO [CoroutineCioNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineCioNioDemo.kt)
     - 可以对比下java bio的写法，几乎一模一样；也就是说kt下可以用bio的写法写nio
+  - 纯NIO2 [CoroutineNio2Demo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineNio2Demo.kt)
+    - coroutine对接nio2
+    - 可以对比下JavaNio2Demo写法，二者的功能一模一样，仅仅是做了kotlin协程的对接，就少了3层回调；
+      apiRequest代码量从79行缩减到29行，就算加上可以复用的工具方法的11行，也就40行；
+      并且命令式顺序执行，逻辑也清晰了很多
 - 【对照组】bio
   - 纯socket [JavaBioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaBioDemo.java)
   - hutool HttpUtil [JavaHutoolBioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaHutoolBioDemo.java)
