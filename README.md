@@ -1,4 +1,4 @@
-# java io
+# java nio demo
 [维基百科 - Java NIO](https://zh.wikipedia.org/wiki/Java_NIO)
 
 以多种方式实现非阻塞demo（单线程100并发），实现的方式有：
@@ -97,7 +97,7 @@ com.example.javaniodemo.JavaNioDemoApplication
 
 估计是因为类似差不多的原因，vertx的future直接就不提供get()这样的阻塞线程等结果的方法。
 
-## 非阻塞代码里面加入阻塞式的会怎样 
+### 非阻塞代码里面加入阻塞式的会怎样 
 不是靠猜，写代码验证
 
 [为什么spring cloud gateway里面不能有阻塞调用？](http://confluence.k8s.fingard.cn/pages/viewpage.action?pageId=20452882)
@@ -108,6 +108,24 @@ com.example.javaniodemo.JavaNioDemoApplication
 HttpUtil.get("http://localhost:8080/delay5s");
 ```
 
+## 代码行数
+
+| 代码                        | 文件总行数（算空行、注释） | 代码行数 |
+| --------------------------- | -------------------------- | -------- |
+| JavaNioDemo.java            | 213                        | 150      |
+| JavaNio2Demo.java           | 168                        | 129      |
+| NettyNioDemo.java           | 139                        | 113      |
+| JavaFeignBioDemo.java       | 97                         | 76       |
+| JavaBioDemo.java            | 93                         | 74       |
+| VertxHttpClientNioDemo.java | 103                        | 73       |
+| SpringWebClientNioDemo.java | 110                        | 69       |
+| Jdk11HttpClientNioDemo.java | 91                         | 69       |
+| CoroutineCioNioDemo.kt      | 92                         | 68       |
+| CoroutineMonoNioDemo.kt     | 81                         | 65       |
+| CoroutineKtorNioDemo.kt     | 68                         | 53       |
+| JavaHutoolBioDemo.java      | 66                         | 48       |
+
+
 ## TODO
 - [ ] coroutine对接nio2，也可以叫《My CIO》
-- [ ] nio通过按顺序多次设置监听，解决循环空转问题
+- [x] nio通过按顺序多次设置监听，解决循环空转问题

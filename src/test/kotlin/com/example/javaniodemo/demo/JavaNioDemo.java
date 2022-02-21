@@ -24,11 +24,7 @@ import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
  */
 public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
 
-    AsynchronousChannelGroup client;
-
     Selector selector;
-
-
 
     @BeforeEach
     void setUp() throws Exception {
@@ -49,28 +45,36 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
         final Selector selector = Selector.open();
 
         // 手写事件循环
-        final ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
-        singleThreadExecutor.submit(() -> {
+        new Thread(() -> {
             try {
 
-                // int loopCount = 0;
+                AtomicInteger loopCount = new AtomicInteger();
                 // 这里有个很严重的问题，事件循环空转，不过这个是demo级的，就不处理了
                 while (true) {
-                    // loopCount++;
-                    // System.out.println("loopCount: " + loopCount);
+                    loopCount.incrementAndGet();
+                    System.out.println("loopCount: " + loopCount.get());
                     selector.select(key -> {
                         try {
+                            // System.out.println("loopCount: " + loopCount.get()+", key: "+key);
                             final SelectorAttachment attachment = (SelectorAttachment) key.attachment();
+                            if(!key.isValid()){
+                                return;
+                            }
                             if (key.isConnectable()) {
+                                // System.out.println("isConnectable  "+key);
                                 final SocketChannel channel = (SocketChannel) key.channel();
                                 // System.out.println(channel.isConnected());
                                 // System.out.println(channel.isConnectionPending());
                                 channel.finishConnect();
                                 // System.out.println(channel.isConnected());
                                 // System.out.println(channel.isConnectionPending());
+                                channel.register(selector, SelectionKey.OP_WRITE, attachment);
+                            }
+                            if(!key.isValid()){
+                                return;
                             }
                             if (key.isReadable()) {
-                                // System.out.println("read");
+                                // System.out.println("read  "+key);
                                 final SocketChannel channel = (SocketChannel) key.channel();
                                 ByteBuffer buffer = ByteBuffer.allocate(256);
                                 channel.read(buffer);
@@ -98,25 +102,36 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
                                     attachment.resultFuture.completeExceptionally(e);
                                 }
                             }
-                            if (!attachment.writeDone && key.isWritable()) {
-                                // System.out.println("write");
-                                final SocketChannel channel = (SocketChannel) key.channel();
-                                final String reqStr = "GET /delay5s HTTP/1.1\n\n";
-                                final byte[] reqStrBytes = reqStr.getBytes(StandardCharsets.UTF_8);
-                                final ByteBuffer outBuffer = ByteBuffer.wrap(reqStrBytes);
-                                final int write = channel.write(outBuffer);
-                                attachment.writeDone = true;
-                                // System.out.println(write);
+                            if(!key.isValid()){
+                                return;
+                            }
+                            if (key.isWritable()) {
+                                // System.out.println("write "+attachment.writeDone+" key"+key);
+                                if(!attachment.writeDone){
+                                    final SocketChannel channel = (SocketChannel) key.channel();
+                                    // final String reqStr = "GET / HTTP/1.1\n\n";
+                                    final String reqStr = "GET /delay5s HTTP/1.1\n\n";
+                                    final byte[] reqStrBytes = reqStr.getBytes(StandardCharsets.UTF_8);
+                                    final ByteBuffer outBuffer = ByteBuffer.wrap(reqStrBytes);
+                                    final SelectionKey readKey = channel.register(selector, SelectionKey.OP_READ, attachment);
+                                    // System.out.println("readkey  "+readKey);
+                                    // selector.wakeup();
+                                    final int write = channel.write(outBuffer);
+                                    attachment.writeDone = true;
+                                    // System.out.println("write"+write);
+                                }
                             }
                         } catch (Exception e) {
+                            e.printStackTrace();
                             throw new RuntimeException(e);
                         }
                     });
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
-        });
+        }).start();
         return selector;
     }
 
@@ -138,18 +153,21 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
     }
 
     public CompletableFuture<String> apiRequest() {
-        final SelectorAttachment selectorAtt = new SelectorAttachment();
+        final SelectorAttachment attachment = new SelectorAttachment();
         try {
-            final SocketChannel reqChannel = SocketChannel.open();
-            reqChannel.configureBlocking(false);
-            reqChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT, selectorAtt);
-            reqChannel.connect(new InetSocketAddress("localhost", 8080));
+            final SocketChannel channel = SocketChannel.open();
+            channel.configureBlocking(false);
+            // 一下子全部注册上去会导致循环空转，循环空转会导致单核cpu 100%
+            // reqChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT, attachment);
+            // 每走一步更新一下注册，可以解决循环空转问题
+            channel.register(selector, SelectionKey.OP_CONNECT, attachment);
+            channel.connect(new InetSocketAddress("localhost", 8080));
             selector.wakeup();
         } catch (Exception e) {
             e.printStackTrace();
-            selectorAtt.resultFuture.completeExceptionally(e);
+            attachment.resultFuture.completeExceptionally(e);
         }
-        return selectorAtt.resultFuture;
+        return attachment.resultFuture;
     }
 
 
