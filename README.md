@@ -112,6 +112,35 @@ com.example.javaniodemo.JavaNioDemoApplication
 HttpUtil.get("http://localhost:8080/delay5s");
 ```
 
+### reactive在java真正意义上的作用
+> - 这里只解读其必要性，而不是可用可不用的那种有得选；
+> - 至于反应式的优点：跟普通命令式顺序编程比起来，反应式编程没有任何优点；
+> - 缺点：难写、难看、难调、难用、出问题不好排查；
+> - 即便没有优点，但其对于java下非阻塞nio编程是有必要性。
+
+一些误解、错误印象：[重新理解响应式编程](https://www.jianshu.com/p/c95e29854cb1) ，说是反应式优点是能更好的组织代码逻辑。
+
+解答：
+1. 话说为啥都叫响应式啊？应该是reactive、而不是responsive；
+2. 反应式下代码逻辑是非常难写的，回调套回调的方式比命令式顺序编程难度大非常多倍；
+3. 其实好处并不是这个文章的东西，文章里说的完全可以用顺序逻辑写，顶多外面套一个观察者模式；完全是因为java下没有让线程跳出当前方法执行语句的关键字，去执行别的，过段时间在回来执行；才产生了这么些不伦不类的试图替代java调度逻辑的库reactor、rx，下面是结合这里的一些非阻塞nio编程demo的详细描述。
+
+现在java下没协程，loom迟迟未发版，造成了java以下逻辑不能实现：线程执行到某行代码，让线程等待一段时间、线程去执行其他逻辑、然后线程再回来执行这里的下一行代码。唯一的解决方法是把下一行代码以及之后的代码放在lambda表达式里面、也就是回调，让这个方法结束掉，后面再通过某些逻辑触发回调，只有这样才能实现非阻塞。
+
+以nio的selector为例【[JavaNioDemo](src/test/kotlin/com/example/javaniodemo/demo/JavaNioDemo.java)】 ，通常的方法、回调的调度逻辑，也就是一个大大的循环裹住一切，这个循环有且仅有一个阻塞点，也就是事件触发的地方等待事件、没有事件时阻塞，否则循环空转会导致这个线程的cpu单核消耗100%，这个循环扩大意义范围就统称事件循环。
+
+java自带的CompletableFuture就是对这样的回调逻辑的封装【[Jdk11HttpClientNioDemo](src/test/kotlin/com/example/javaniodemo/demo/Jdk11HttpClientNioDemo.java) 】，spring mono、vertx算是对CompletableFuture功能的扩展，本质上并没有差别，就是回调。至于扩展的这一部分调度逻辑的编程方式，来处理回调式（也称为函数式）逻辑的if、else、while、for、finally、catch这样的逻辑语义，大体上统称为反应式/reactive编程。至于这个[反应式宣言](https://www.reactivemanifesto.org/zh-CN) ，只是前面reactive编程理想状态下想要达成的效果，其实也无所谓，仅仅是一种编程方式而已。
+
+至于为啥java下各路软件框架都一直强调reactive？
+因为java下reactive是非阻塞nio编程的唯一方式，reactive是非阻塞nio编程一步步封装下来的结果，是java下非阻塞nio编程所必要的。也可以不用reactor、vertx这样的框架来写非阻塞nio，自己封装各种回调，其实自己封装的最终结果就是造了一个功能不完整的reactive框架。
+
+效果：在java下就不要考虑什么非阻塞了，更不要考虑非阻塞的业务逻辑，所耗费的精力、代码难度、实现进度等，比学一个原生支持非阻塞语义的jvm语言再做实现，难度高太多了。
+
+结论：java下就用阻塞式，真要非阻塞就换其他jvm语言，反正双向对接非常方便。比如kotlin的协程，非常轻松的就用命令式的写法对接nio2【[CoroutineNio2Demo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineNio2Demo.kt)】，当然也有原厂的nio框架【[CoroutineKtorNioDemo](src/test/kotlin/com/example/javaniodemo/demo/CoroutineKtorNioDemo.kt)】
+
+#### 协程的实际意义上作用
+具备反应式的所有功能、能写非阻塞nio代码的同时，用的是命令式顺序写法。
+
 ## 代码行数
 
 | 代码                        | 文件总行数（算空行、注释） | 代码行数 |
@@ -131,5 +160,5 @@ HttpUtil.get("http://localhost:8080/delay5s");
 
 
 ## TODO
-- [ ] coroutine对接nio2，也可以叫《My CIO》
+- [x] coroutine对接nio2，也可以叫《My CIO》
 - [x] nio通过按顺序多次设置监听，解决循环空转问题
