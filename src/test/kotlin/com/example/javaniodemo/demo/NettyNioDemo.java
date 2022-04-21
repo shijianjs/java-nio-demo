@@ -1,20 +1,27 @@
 package com.example.javaniodemo.demo;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.util.AttributeKey;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -137,4 +144,53 @@ public class NettyNioDemo implements ApiRequest<CompletableFuture<String>>{
         return bootstrap;
     }
 
+
+    @SneakyThrows
+    @Test
+    public void singleThreadServer() {
+        val b=new ServerBootstrap().group(new NioEventLoopGroup(1))
+                .channel(NioServerSocketChannel.class)
+                // .handler(new LoggingHandler(LogLevel.INFO))
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ch.pipeline()
+                                .addLast(new HttpServerCodec())// http 编解码
+                                .addLast(new HttpObjectAggregator(512 * 1024))
+                                .addLast(new SimpleChannelInboundHandler<FullHttpRequest>() {
+                                    @Override
+                                    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
+                                        final String uri = req.uri();
+                                        log.info("接收请求uri："+uri);
+                                        if ("/delay5s".equals(uri) || uri.endsWith("/delay5s")){
+                                            CompletableFuture.runAsync(()->{
+                                                ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                                                                HttpResponseStatus.OK,
+                                                                Unpooled.wrappedBuffer("hello".getBytes())))
+                                                        .addListener(writeFuture->ctx.close());
+                                            }, CompletableFuture.delayedExecutor(5, TimeUnit.SECONDS));
+                                        }else{
+                                            ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                                                    HttpResponseStatus.NOT_FOUND,
+                                                    Unpooled.wrappedBuffer("404".getBytes())))
+                                                    .addListener(writeFuture->ctx.close());
+                                        }
+                                    }
+                                    // @Override
+                                    // public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+                                    //     super.channelReadComplete(ctx);
+                                    //     // ctx.close();
+                                    // }
+                                });
+
+                    }
+                });
+        b.bind(8080).addListener(future -> {
+            log.info("bind");
+            if(!future.isSuccess()){
+                future.cause().printStackTrace();
+            }
+        });
+        new CountDownLatch(1).await();
+    }
 }
