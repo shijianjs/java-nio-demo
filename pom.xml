@@ -13,6 +13,10 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>java-nio-demo</name>
     <description>java-nio-demo</description>
+    <modules>
+        <module>loom-demo</module>
+    </modules>
+
     <properties>
         <java.version>11</java.version>
         <kotlin.version>1.6.10</kotlin.version>
