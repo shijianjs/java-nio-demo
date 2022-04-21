@@ -145,6 +145,26 @@ java自带的CompletableFuture就是对这样的回调逻辑的封装【[Jdk11Ht
 #### 协程的实际意义上作用
 具备反应式的所有功能、能写非阻塞nio代码的同时，用的是命令式顺序写法。
 
+## loom试验
+[loom-demo](./loom-demo)
+
+### 编译说明
+
+javac 编译参数添加：--enable-preview
+
+#### idea配置
+- idea 设置
+  - 构建、执行、部署
+    - 构建工具
+      - 编译器
+        - java编译器
+          - Javac选项
+            - 按模块重写编译器参数
+              - +号：添加loom-demo
+                - loom-demo编译选项：--enable-preview
+
+按以上步骤设置好之后，idea直接点单元测试、或者main方法的运行图标，就都能正常运行了。
+
 ## 代码行数
 
 | 代码                        | 文件总行数（算空行、注释） | 代码行数 |

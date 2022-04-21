@@ -13,9 +13,9 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>java-nio-demo</name>
     <description>java-nio-demo</description>
-    <modules>
+    <!--<modules>
         <module>loom-demo</module>
-    </modules>
+    </modules>-->
 
     <properties>
         <java.version>11</java.version>
