@@ -22,6 +22,7 @@ import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
  *
  * 返回CompletableFuture，调度逻辑同jdk11Http
  */
+@lombok.extern.slf4j.Slf4j
 public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
 
     AsynchronousChannelGroup client;
@@ -40,7 +41,7 @@ public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
     @Test
     public void singleTest() throws Exception {
         final CompletableFuture<String> future = apiRequest()
-                .whenComplete((s, throwable) -> System.out.println(s));
+                .whenComplete((s, throwable) -> log.info(s));
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         future.get();
@@ -60,20 +61,20 @@ public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
                     channel.write(outBuffer, null, new CompletionHandler<Integer, Object>() {
                         @Override
                         public void completed(Integer result, Object attachment) {
-                            // System.out.println("channel.write completed: " + result);
+                            // log.info("channel.write completed: " + result);
                             Assertions.assertEquals(reqStrBytes.length, result);
                             ByteBuffer buffer = ByteBuffer.allocate(256);
                             // 这里代码处理的不严谨，半包、粘包等都没考虑
                             channel.read(buffer, null, new CompletionHandler<Integer, Object>() {
                                 @Override
                                 public void completed(Integer result, Object attachment) {
-                                    // System.out.println(result);
-                                    // System.out.println(buffer);
+                                    // log.info(result);
+                                    // log.info(buffer);
                                     buffer.flip();
                                     final byte[] bytes = new byte[buffer.remaining()];
                                     buffer.get(bytes);
                                     final String responseStr = new String(bytes);
-                                    // System.out.println(responseStr);
+                                    // log.info(responseStr);
                                     final String[] split = responseStr.split("\r\n\r\n", 2);
                                     String header = split[0];
                                     String body = split[1];
@@ -95,7 +96,7 @@ public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
 
                                 @Override
                                 public void failed(Throwable exc, Object attachment) {
-                                    System.out.println("channel.read failed");
+                                    log.info("channel.read failed");
                                     exc.printStackTrace();
                                     resultFuture.completeExceptionally(exc);
                                 }
@@ -105,7 +106,7 @@ public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
 
                         @Override
                         public void failed(Throwable exc, Object attachment) {
-                            System.out.println("channel.write failed");
+                            log.info("channel.write failed");
                             exc.printStackTrace();
                             resultFuture.completeExceptionally(exc);
                         }
@@ -114,7 +115,7 @@ public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
 
                 @Override
                 public void failed(Throwable exc, Object attachment) {
-                    System.out.println("channel.connect failed");
+                    log.info("channel.connect failed");
                     exc.printStackTrace();
                     resultFuture.completeExceptionally(exc);
                 }
@@ -139,7 +140,7 @@ public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
 
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
 
         final CompletableFuture<Void> resultFuture = CompletableFuture.allOf(IntStream.rangeClosed(1, parallelCount)
                         .boxed()
@@ -158,7 +159,7 @@ public class JavaNio2Demo implements ApiRequest<CompletableFuture<String>> {
                         .toArray(new CompletableFuture[]{}))
                 .whenComplete((unused, throwable) -> {
                     final long duration = (System.currentTimeMillis() - start) / 1000;
-                    System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+                    log.info("请求成功：" + counter + "，耗时s：" + duration);
                 });
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个

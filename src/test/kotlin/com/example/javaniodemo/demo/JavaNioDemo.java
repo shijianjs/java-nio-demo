@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -22,6 +22,7 @@ import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
  * <p>
  * 返回CompletableFuture，调度逻辑同jdk11Http
  */
+@lombok.extern.slf4j.Slf4j
 public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
 
     Selector selector;
@@ -52,38 +53,38 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
                 // 这里有个很严重的问题，事件循环空转，不过这个是demo级的，就不处理了
                 while (true) {
                     loopCount.incrementAndGet();
-                    System.out.println("loopCount: " + loopCount.get());
+                    log.info("loopCount: " + loopCount.get());
                     selector.select(key -> {
                         try {
-                            // System.out.println("loopCount: " + loopCount.get()+", key: "+key);
+                            // log.info("loopCount: " + loopCount.get()+", key: "+key);
                             final SelectorAttachment attachment = (SelectorAttachment) key.attachment();
                             if(!key.isValid()){
                                 return;
                             }
                             if (key.isConnectable()) {
-                                // System.out.println("isConnectable  "+key);
+                                // log.info("isConnectable  "+key);
                                 final SocketChannel channel = (SocketChannel) key.channel();
-                                // System.out.println(channel.isConnected());
-                                // System.out.println(channel.isConnectionPending());
+                                // log.info(channel.isConnected());
+                                // log.info(channel.isConnectionPending());
                                 channel.finishConnect();
-                                // System.out.println(channel.isConnected());
-                                // System.out.println(channel.isConnectionPending());
+                                // log.info(channel.isConnected());
+                                // log.info(channel.isConnectionPending());
                                 channel.register(selector, SelectionKey.OP_WRITE, attachment);
                             }
                             if(!key.isValid()){
                                 return;
                             }
                             if (key.isReadable()) {
-                                // System.out.println("read  "+key);
+                                // log.info("read  "+key);
                                 final SocketChannel channel = (SocketChannel) key.channel();
                                 ByteBuffer buffer = ByteBuffer.allocate(256);
                                 channel.read(buffer);
-                                // System.out.println(buffer);
+                                // log.info(buffer);
                                 buffer.flip();
                                 final byte[] bytes = new byte[buffer.remaining()];
                                 buffer.get(bytes);
                                 final String responseStr = new String(bytes);
-                                // System.out.println(responseStr);
+                                // log.info(responseStr);
                                 final String[] split = responseStr.split("\r\n\r\n", 2);
                                 String header = split[0];
                                 String body = split[1];
@@ -106,7 +107,7 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
                                 return;
                             }
                             if (key.isWritable()) {
-                                // System.out.println("write "+attachment.writeDone+" key"+key);
+                                // log.info("write "+attachment.writeDone+" key"+key);
                                 if(!attachment.writeDone){
                                     final SocketChannel channel = (SocketChannel) key.channel();
                                     // final String reqStr = "GET / HTTP/1.1\n\n";
@@ -114,11 +115,11 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
                                     final byte[] reqStrBytes = reqStr.getBytes(StandardCharsets.UTF_8);
                                     final ByteBuffer outBuffer = ByteBuffer.wrap(reqStrBytes);
                                     final SelectionKey readKey = channel.register(selector, SelectionKey.OP_READ, attachment);
-                                    // System.out.println("readkey  "+readKey);
+                                    // log.info("readkey  "+readKey);
                                     // selector.wakeup();
                                     final int write = channel.write(outBuffer);
                                     attachment.writeDone = true;
-                                    // System.out.println("write"+write);
+                                    // log.info("write"+write);
                                 }
                             }
                         } catch (Exception e) {
@@ -140,8 +141,8 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
     @Test
     public void singleTest() throws Exception {
         final CompletableFuture<String> future = apiRequest()
-                .whenComplete((s, throwable) -> System.out.println(s));
-        // System.out.println("future生成完毕");
+                .whenComplete((s, throwable) -> log.info(s));
+        // log.info("future生成完毕");
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         future.get();
@@ -184,7 +185,7 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
 
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
 
         final CompletableFuture<Void> resultFuture = CompletableFuture.allOf(IntStream.rangeClosed(1, parallelCount)
                         .boxed()
@@ -203,7 +204,7 @@ public class JavaNioDemo implements ApiRequest<CompletableFuture<String>> {
                         .toArray(new CompletableFuture[]{}))
                 .whenComplete((unused, throwable) -> {
                     final long duration = (System.currentTimeMillis() - start) / 1000;
-                    System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+                    log.info("请求成功：" + counter + "，耗时s：" + duration);
                 });
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个

@@ -10,15 +10,14 @@ import io.vertx.core.http.HttpMethod;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
 
+@lombok.extern.slf4j.Slf4j
 public class VertxHttpClientNioDemo implements ApiRequest<Future<String>> {
 
     HttpClient client;
@@ -43,7 +42,7 @@ public class VertxHttpClientNioDemo implements ApiRequest<Future<String>> {
     @Test
     public void singleTest() throws Exception {
         final Future<String> future = apiRequest()
-                .onSuccess((s) -> System.out.println(s));
+                .onSuccess((s) -> log.info(s));
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         // 发现vertx的future并没有提供阻塞当前线程的get方法，这里转换下再get。
@@ -75,7 +74,7 @@ public class VertxHttpClientNioDemo implements ApiRequest<Future<String>> {
 
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
 
         final CompositeFuture resultFuture = CompositeFuture.all(IntStream.rangeClosed(1, parallelCount)
                         .boxed()
@@ -93,7 +92,7 @@ public class VertxHttpClientNioDemo implements ApiRequest<Future<String>> {
                         .collect(Collectors.toList()))
                 .onSuccess((unused) -> {
                     final long duration = (System.currentTimeMillis() - start) / 1000;
-                    System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+                    log.info("请求成功：" + counter + "，耗时s：" + duration);
                 });
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个

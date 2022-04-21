@@ -8,6 +8,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.util.AttributeKey;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import static io.netty.util.CharsetUtil.UTF_8;
  * 纯netty写法，这里仅仅是和CompletableFuture做了对接，所以调度逻辑和jdk11 http client相同
  * 明显可以看出，netty的写法更复杂，并且状态不好处理
  */
+@Slf4j
 public class NettyNioDemo implements ApiRequest<CompletableFuture<String>>{
 
     final AttributeKey<CompletableFuture<String>> resultFutureKey = AttributeKey.valueOf("resultFutureKey");
@@ -42,7 +44,7 @@ public class NettyNioDemo implements ApiRequest<CompletableFuture<String>>{
     @Test
     public void singleTest() throws Exception {
         final CompletableFuture<String> resultFuture = apiRequest()
-                .whenComplete((s, throwable) -> System.out.println("执行结果：" + s));
+                .whenComplete((s, throwable) -> log.info("执行结果：" + s));
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         resultFuture.get();
     }
@@ -54,7 +56,7 @@ public class NettyNioDemo implements ApiRequest<CompletableFuture<String>>{
 
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
 
         final CompletableFuture<Void> resultFuture = CompletableFuture.allOf(IntStream.rangeClosed(1, parallelCount)
                         .boxed()
@@ -73,7 +75,7 @@ public class NettyNioDemo implements ApiRequest<CompletableFuture<String>>{
                         .toArray(new CompletableFuture[]{}))
                 .whenComplete((unused, throwable) -> {
                     final long duration = (System.currentTimeMillis() - start) / 1000;
-                    System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+                    log.info("请求成功：" + counter + "，耗时s：" + duration);
                 });
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
@@ -104,24 +106,23 @@ public class NettyNioDemo implements ApiRequest<CompletableFuture<String>>{
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline()
-                                .addLast(new HttpResponseDecoder())
-                                .addLast(new HttpRequestEncoder())
+                                .addLast(new HttpClientCodec())
                                 .addLast(new ChannelInboundHandlerAdapter() {
                                     @Override
                                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                                         if (msg instanceof HttpResponse) {
                                             HttpResponse response = (HttpResponse) msg;
-                                            // System.out.println("CONTENT_TYPE:" + response.headers().get(HttpHeaders.Names.CONTENT_TYPE));
+                                            // log.info("CONTENT_TYPE:" + response.headers().get(HttpHeaders.Names.CONTENT_TYPE));
                                         } else if (msg instanceof HttpContent) {
                                             HttpContent content = (HttpContent) msg;
                                             ByteBuf buf = content.content();
                                             final String result = buf.toString(UTF_8);
                                             buf.release();
-                                            // System.out.println(result);
+                                            // log.info(result);
                                             final CompletableFuture<String> resultFuture = ctx.channel().attr(resultFutureKey).get();
                                             resultFuture.complete(result);
                                         } else {
-                                            System.out.println(msg);
+                                            log.info(msg.toString());
                                         }
                                     }
 

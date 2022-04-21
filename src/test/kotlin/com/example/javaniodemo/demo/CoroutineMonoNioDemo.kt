@@ -6,6 +6,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
@@ -41,7 +42,7 @@ class CoroutineMonoNioDemo : ApiRequestCoroutine<String> {
     @Test
     fun singleTest(): Unit = runBlocking {
         val result: String = apiRequest()
-        println(result)
+        log.info(result)
     }
 
 
@@ -53,7 +54,7 @@ class CoroutineMonoNioDemo : ApiRequestCoroutine<String> {
 
             val counter = AtomicInteger(0)
             val start = System.currentTimeMillis()
-            println("开始执行")
+            log.info("开始执行")
             (1..parallelCount).map { i ->
                 async {
                     repeat(requestsPerParallel) {
@@ -65,7 +66,7 @@ class CoroutineMonoNioDemo : ApiRequestCoroutine<String> {
             }.awaitAll()
             val end = System.currentTimeMillis()
             val duration = (end - start) / 1000
-            println("请求成功：$counter，耗时：$duration s")
+            log.info("请求成功：$counter，耗时：$duration s")
         }
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
@@ -77,5 +78,7 @@ class CoroutineMonoNioDemo : ApiRequestCoroutine<String> {
             .uri("http://localhost:8080/delay5s")
             .retrieve()
             .awaitBody()
-
+    companion object{
+        val log = KotlinLogging.logger {  }
+    }
 }

@@ -62,7 +62,7 @@ public class FutureTest {
                         .toArray(new CompletableFuture[]{}))
                 .whenComplete((unused, throwable) -> {
                     final long duration = (System.currentTimeMillis() - start) / 1000;
-                    System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+                    log.info("请求成功：" + counter + "，耗时s：" + duration);
                 });
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个

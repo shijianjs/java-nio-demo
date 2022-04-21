@@ -16,6 +16,7 @@ import java.util.stream.IntStream;
 
 import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
 
+@lombok.extern.slf4j.Slf4j
 public class Jdk11HttpClientNioDemo implements ApiRequest<CompletableFuture<String>>{
     HttpClient client;
 
@@ -35,7 +36,7 @@ public class Jdk11HttpClientNioDemo implements ApiRequest<CompletableFuture<Stri
     @Test
     public void singleTest() throws Exception {
         final CompletableFuture<String> future = apiRequest()
-                .whenComplete((s, throwable) -> System.out.println(s));
+                .whenComplete((s, throwable) -> log.info(s));
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         future.get();
@@ -62,7 +63,7 @@ public class Jdk11HttpClientNioDemo implements ApiRequest<CompletableFuture<Stri
 
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
 
         final CompletableFuture<Void> resultFuture = CompletableFuture.allOf(IntStream.rangeClosed(1, parallelCount)
                         .boxed()
@@ -81,7 +82,7 @@ public class Jdk11HttpClientNioDemo implements ApiRequest<CompletableFuture<Stri
                         .toArray(new CompletableFuture[]{}))
                 .whenComplete((unused, throwable) -> {
                     final long duration = (System.currentTimeMillis() - start) / 1000;
-                    System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+                    log.info("请求成功：" + counter + "，耗时s：" + duration);
                 });
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个

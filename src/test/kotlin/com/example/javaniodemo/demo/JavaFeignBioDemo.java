@@ -3,24 +3,11 @@ package com.example.javaniodemo.demo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,6 +23,7 @@ import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
  */
 
 @SpringBootTest
+@lombok.extern.slf4j.Slf4j
 public class JavaFeignBioDemo implements ApiRequest<String> {
 
     @Autowired
@@ -55,7 +43,7 @@ public class JavaFeignBioDemo implements ApiRequest<String> {
     @Test
     public void singleTest() {
         String result = apiRequest();
-        System.out.println(result);
+        log.info(result);
     }
 
     public String apiRequest() {
@@ -70,7 +58,7 @@ public class JavaFeignBioDemo implements ApiRequest<String> {
         final ExecutorService threadPool = Executors.newFixedThreadPool(100);
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
         IntStream.rangeClosed(1, parallelCount)
                 .mapToObj(i -> threadPool.submit(() -> {
                     for (int j = 0; j < requestsPerParallel; j++) {
@@ -90,7 +78,7 @@ public class JavaFeignBioDemo implements ApiRequest<String> {
                 });
         long end = System.currentTimeMillis();
         final long duration = (end - start) / 1000;
-        System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+        log.info("请求成功：" + counter + "，耗时s：" + duration);
     }
 
 

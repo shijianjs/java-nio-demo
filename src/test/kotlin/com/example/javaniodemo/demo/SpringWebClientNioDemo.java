@@ -20,6 +20,7 @@ import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
  * <p>
  * 大致花费时间：3h
  */
+@lombok.extern.slf4j.Slf4j
 public class SpringWebClientNioDemo implements ApiRequest<Mono<String>>{
 
     WebClient webClient;
@@ -44,7 +45,7 @@ public class SpringWebClientNioDemo implements ApiRequest<Mono<String>>{
     @Test
     public void singleTest() {
         final Mono<String> mono = apiRequest()
-                .doOnNext(System.out::println);
+                .doOnNext(log::info);
 
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         mono.block();
@@ -81,7 +82,7 @@ public class SpringWebClientNioDemo implements ApiRequest<Mono<String>>{
 
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
 
         // 100并发
         final Mono<?> resultMono = Flux.fromStream(IntStream.rangeClosed(1, parallelCount).boxed())
@@ -101,7 +102,7 @@ public class SpringWebClientNioDemo implements ApiRequest<Mono<String>>{
                 .collectList()
                 .doOnNext(result -> {
                     final long duration = (System.currentTimeMillis() - start) / 1000;
-                    System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+                    log.info("请求成功：" + counter + "，耗时s：" + duration);
                 });
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         resultMono.block();

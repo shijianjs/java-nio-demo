@@ -18,11 +18,12 @@ import static com.example.javaniodemo.demo.IoParallelUtil.countRequest;
  *
  * 大致花费时间：0.5h
  */
+@lombok.extern.slf4j.Slf4j
 public class JavaHutoolBioDemo implements ApiRequest<String>{
     @Test
     public void singleTest() {
         String result = apiRequest();
-        System.out.println(result);
+        log.info(result);
     }
 
     public String apiRequest() {
@@ -37,7 +38,7 @@ public class JavaHutoolBioDemo implements ApiRequest<String>{
         final ExecutorService threadPool = Executors.newFixedThreadPool(100);
         AtomicInteger counter = new AtomicInteger(0);
         long start = System.currentTimeMillis();
-        System.out.println("开始执行");
+        log.info("开始执行");
         IntStream.rangeClosed(1, parallelCount)
                 .mapToObj(i -> threadPool.submit(() -> {
                     for (int j = 0; j < requestsPerParallel; j++) {
@@ -57,7 +58,7 @@ public class JavaHutoolBioDemo implements ApiRequest<String>{
                 });
         long end = System.currentTimeMillis();
         final long duration = (end - start) / 1000;
-        System.out.println("请求成功：" + counter + "，耗时s：" + duration);
+        log.info("请求成功：" + counter + "，耗时s：" + duration);
     }
 
 
