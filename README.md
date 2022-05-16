@@ -108,15 +108,52 @@ com.example.javaniodemo.JavaNioDemoApplication
 ### 非阻塞代码里面加入阻塞式的会怎样 
 不是靠猜，写代码验证
 
-[为什么spring cloud gateway里面不能有阻塞调用？](http://confluence.k8s.fingard.cn/pages/viewpage.action?pageId=20452882)
-
 可以尝试下，分别在 bio、nio的demo的apiRequest加上一句，然后运行看效果：
 ```java
 // import cn.hutool.http.HttpUtil;
 HttpUtil.get("http://localhost:8080/delay5s");
 ```
+#### 为什么spring cloud gateway里面不能有阻塞调用？
+##### 测试方案
+在gateway的filter里面，产生一个有耗时的http请求A，为了明显这个http请求A的响应时长为1秒；
+
+分别用feign、webclient作客户端对http请求A实现，分别代表阻塞式、非阻塞式；
+
+服务端server是普通的spring mvc应用；
+
+用jmeter压测，100个请求模拟100并发；
+
+##### 代码实现
+gitlab地址：gateway-blocking · GitLab (fingard.cn)
+
+控制变量法，二者间唯一的区别就是http客户端的实现：
+
+```java
+public interface ServerFeignClient {
+    @GetMapping("/hello/filter")
+    String filter(@RequestParam String type, @RequestParam Long delay, @RequestParam String name);
+}
+
+public interface ServerReactiveClient {
+    Mono<String> filter(String type, Long delay, String name);
+}
+```
+测试结果概述
+
+| filter内请求实现 | 代表方式 | tps  |
+| ---------------- | -------- | ---- |
+| feign            | 阻塞式   | 8    |
+| webclient        | 非阻塞式 | 99   |
+
+测试配置：
+- cpu核数：8
+- jmeter版本：5.4.1
+- jmenter线程数（并发数）：100
+- 必经的filter响应时长：1s
 
 ### reactive在java真正意义上的作用
+参考：[Java 异步编程：从 Future 到 Loom - 简书 (jianshu.com)](https://www.jianshu.com/p/5db701a764cb)
+
 > - 这里只解读其必要性，而不是可用可不用的那种有得选；
 > - 至于反应式的优点：跟普通命令式顺序编程比起来，反应式编程没有任何优点；
 > - 缺点：难写、难看、难调、难用、出问题不好排查；
