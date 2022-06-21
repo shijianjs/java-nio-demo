@@ -119,9 +119,18 @@ public class MyCompletableFuture<T> {
         private final MyLatch loopLatch = new MyLatch();
 
         /**
+         * 优先级队列
          *
+         * 不引用并发包的队列，维持该类的纯净
+         *
+         * 除了add外，其他操作应该是严格的单线程，不需要加锁，有并发问题再说
          */
-        private final PriorityQueue<MyCompletableFuture<?>> queue = new PriorityQueue<>(Comparator.comparing(f -> f.triggerTime));
+        private final PriorityQueue<MyCompletableFuture<?>> queue = new PriorityQueue<>(Comparator.comparing(f -> f.triggerTime)){
+            @Override
+            public synchronized boolean add(MyCompletableFuture<?> myCompletableFuture) {
+                return super.add(myCompletableFuture);
+            }
+        };
 
         /**
          * 构造器
@@ -172,7 +181,7 @@ public class MyCompletableFuture<T> {
          * <p>
          * 有可能是非调度线程在调用这个方法，所以每次添加完通知调度线程该循环了
          */
-        private synchronized void addTask(MyCompletableFuture<?> task) {
+        private void addTask(MyCompletableFuture<?> task) {
             queue.add(task);
             loopLatch.unblock();
         }
