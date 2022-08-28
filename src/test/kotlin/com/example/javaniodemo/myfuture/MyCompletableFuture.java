@@ -2,6 +2,7 @@ package com.example.javaniodemo.myfuture;
 
 import cn.hutool.core.lang.Assert;
 import lombok.SneakyThrows;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -70,6 +71,26 @@ public class MyCompletableFuture<T> {
     }
 
     /**
+     * 完成这个future
+     * @param result
+     */
+    public void complete(T result) {
+        if (!this.isCompleted){
+            this.isCompleted = true;
+            this.setSuccess(result);
+        }
+    }
+
+    /**
+     * 暂时不做异常处理
+     *
+     * @param e
+     */
+    public void completeExceptionally(Exception e) {
+        throw new RuntimeException(e);
+    }
+
+    /**
      * 模仿CountDownLatch，阻塞线程用
      */
     public static class MyLatch {
@@ -125,12 +146,7 @@ public class MyCompletableFuture<T> {
          *
          * 除了add外，其他操作应该是严格的单线程，不需要加锁，有并发问题再说
          */
-        private final PriorityQueue<MyCompletableFuture<?>> queue = new PriorityQueue<>(Comparator.comparing(f -> f.triggerTime)){
-            @Override
-            public synchronized boolean add(MyCompletableFuture<?> myCompletableFuture) {
-                return super.add(myCompletableFuture);
-            }
-        };
+        private final PriorityQueue<MyCompletableFuture<?>> queue = new PriorityQueue<>(Comparator.comparing(f -> f.triggerTime));
 
         /**
          * 构造器
@@ -148,15 +164,20 @@ public class MyCompletableFuture<T> {
         private void loop() {
             while (true) {
                 blockThreadToWait();
-                while (!queue.isEmpty() && queue.peek().triggerTime <= System.currentTimeMillis()) {
+                while (!isEmpty() && getDelay()<=0) {
                     try {
-                        Objects.requireNonNull(queue.poll()).runnable.run();
+                        Objects.requireNonNull(poll()).runnable.run();
                     } catch (Exception e) {
                         // 暂时不处理异常
                         e.printStackTrace();
                     }
                 }
             }
+        }
+
+        @Nullable
+        private synchronized MyCompletableFuture<?> poll() {
+            return queue.poll();
         }
 
         /**
@@ -166,10 +187,10 @@ public class MyCompletableFuture<T> {
          */
         private void blockThreadToWait() throws InterruptedException {
             // loopLatch = new CountDownLatch(1);
-            if (queue.isEmpty()) {
+            if (isEmpty()) {
                 loopLatch.block();
             } else {
-                final long delay = queue.peek().triggerTime - System.currentTimeMillis();
+                final long delay = getDelay();
                 if (delay > 0) {
                     loopLatch.block(delay);
                 }
@@ -177,11 +198,27 @@ public class MyCompletableFuture<T> {
         }
 
         /**
+         * 不加这几个同步会遇到并发问题
+         */
+        private synchronized boolean isEmpty(){
+            return queue.isEmpty();
+        }
+        /**
+         * 不加这几个同步会遇到并发问题
+         */
+        private synchronized long getDelay(){
+            if (queue.isEmpty()){
+                return 1;
+            }
+            return queue.peek().triggerTime - System.currentTimeMillis();
+        }
+
+        /**
          * 添加任务
          * <p>
          * 有可能是非调度线程在调用这个方法，所以每次添加完通知调度线程该循环了
          */
-        private void addTask(MyCompletableFuture<?> task) {
+        private synchronized void addTask(MyCompletableFuture<?> task) {
             queue.add(task);
             loopLatch.unblock();
         }
@@ -191,7 +228,7 @@ public class MyCompletableFuture<T> {
     /**
      * 并行执行全部，全部成功后返回
      */
-    public static MyCompletableFuture<Void> allOf(MyCompletableFuture<?>... cfs) {
+    public static MyCompletableFuture<Void> newAllOf(MyCompletableFuture<?>... cfs) {
         final MyCompletableFuture<Void> allFuture = new MyCompletableFuture<>();
         allFuture.counter = cfs.length;
         allFuture.runnable = () -> {
@@ -214,12 +251,23 @@ public class MyCompletableFuture<T> {
      * <p>
      * MyCompletableFuture当前唯一的入口
      */
-    public static <U> MyCompletableFuture<U> completedFuture(U value) {
+    public static <U> MyCompletableFuture<U> newWithValue(U value) {
         final MyCompletableFuture<U> future = new MyCompletableFuture<>();
         future.success = true;
         future.result = value;
         future.runnable = () -> {
             future.setSuccess(value);
+        };
+        future.head = future;
+        return future;
+    }
+
+    public static <U> MyCompletableFuture<U> newToComplete() {
+        final MyCompletableFuture<U> future = new MyCompletableFuture<>();
+        future.isCompleted = false;
+        // future.success = true;
+        future.runnable = () -> {
+            // future.setSuccess(value);
         };
         future.head = future;
         return future;
@@ -317,7 +365,7 @@ public class MyCompletableFuture<T> {
         this.success = true;
 
         // 执行下一条
-        if (next != null) {
+        if (next != null && isSubscribed) {
             toLoop(next);
         }
 
@@ -331,6 +379,18 @@ public class MyCompletableFuture<T> {
      * 这里只支持在设定好的线程执行，不支持在当前线程执行
      */
     private static void toLoop(MyCompletableFuture<?> future) {
-        MyFutureRuntime.INSTANCE.addTask(future);
+        future.isSubscribed = true;
+        if (future.isCompleted) {
+            MyFutureRuntime.INSTANCE.addTask(future);
+        }
     }
+
+    /**
+     * 是否完成
+     *
+     * 用于判断未初始化值的future
+     */
+    boolean isCompleted = true;
+
+    boolean isSubscribed = false;
 }

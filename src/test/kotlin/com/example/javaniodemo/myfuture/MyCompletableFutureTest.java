@@ -1,5 +1,6 @@
 package com.example.javaniodemo.myfuture;
 
+import cn.hutool.core.thread.ThreadUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -21,6 +22,30 @@ public class MyCompletableFutureTest {
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "2");
     }
 
+
+    @Test
+    public void testToComplete() {
+        final MyCompletableFuture<String> stringMyCompletableFuture = MyCompletableFuture.<String>newToComplete();
+        final MyCompletableFuture<String> myCompletableFuture = stringMyCompletableFuture
+                .whenComplete((s, throwable) -> log.info("1: "+s))
+                .thenCompose(s -> MyCompletableFuture.newWithValue(s+" aa"))
+                .whenComplete((s, throwable) -> log.info("2: "+s));
+        ;
+        new Thread(){
+            @Override
+            public void run() {
+                log.info("start block");
+                final String block = myCompletableFuture.block();
+                log.info("end block: "+block);
+            }
+        }.start();
+        ThreadUtil.sleep(3000);
+        log.info("before complete");
+        stringMyCompletableFuture.complete("hello to complete");
+        log.info("after complete");
+        ThreadUtil.sleep(1000);
+
+    }
 
     @SneakyThrows
     @Test
@@ -50,7 +75,7 @@ public class MyCompletableFutureTest {
                 .whenComplete((s, throwable) -> log.info("whenComplete: " + s))
                 .thenCompose(s -> {
                     log.info("进入thenCompose："+s);
-                    return MyCompletableFuture.completedFuture("thenCompose: " + s)
+                    return MyCompletableFuture.newWithValue("thenCompose: " + s)
                             .delay(3000)
                             .whenComplete((sc, throwable) -> log.info("thenCompose + whenComplete: " + sc));
                 });
@@ -62,7 +87,7 @@ public class MyCompletableFutureTest {
     @Test
     public void testDelay3() {
         log.info("start");
-        MyCompletableFuture<String> singleParallelFuture = MyCompletableFuture.completedFuture("");
+        MyCompletableFuture<String> singleParallelFuture = MyCompletableFuture.newWithValue("");
         singleParallelFuture = singleParallelFuture.thenCompose(s -> apiRequest()
                 .whenComplete((s1, throwable) -> {
                     Assertions.assertEquals("hello", s1);
@@ -78,7 +103,7 @@ public class MyCompletableFutureTest {
     public void testDelay4() {
         log.info("start");
         int requestsPerParallel = 2;
-        MyCompletableFuture<String> singleParallelFuture = MyCompletableFuture.completedFuture("");
+        MyCompletableFuture<String> singleParallelFuture = MyCompletableFuture.newWithValue("");
         for (int j = 0; j < requestsPerParallel; j++) {
             singleParallelFuture = singleParallelFuture.thenCompose(s -> apiRequest()
                     .whenComplete((s1, throwable) -> {
@@ -100,10 +125,10 @@ public class MyCompletableFutureTest {
         long start = System.currentTimeMillis();
         System.out.println("开始执行");
 
-        final MyCompletableFuture<Void> resultFuture = MyCompletableFuture.allOf(IntStream.rangeClosed(1, parallelCount)
+        final MyCompletableFuture<Void> resultFuture = MyCompletableFuture.newAllOf(IntStream.rangeClosed(1, parallelCount)
                         .boxed()
                         .map(i -> {
-                            MyCompletableFuture<String> singleParallelFuture = MyCompletableFuture.completedFuture("");
+                            MyCompletableFuture<String> singleParallelFuture = MyCompletableFuture.newWithValue("");
                             for (int j = 0; j < requestsPerParallel; j++) {
                                 singleParallelFuture = singleParallelFuture.thenCompose(s -> apiRequest()
                                         .whenComplete((s1, throwable) -> {
@@ -125,6 +150,6 @@ public class MyCompletableFutureTest {
     }
 
     public MyCompletableFuture<String> apiRequest() {
-        return MyCompletableFuture.completedFuture("hello").delay(5 * 1000);
+        return MyCompletableFuture.newWithValue("hello").delay(5 * 1000);
     }
 }
