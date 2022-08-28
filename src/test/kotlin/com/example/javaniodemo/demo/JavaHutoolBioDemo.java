@@ -1,9 +1,12 @@
 package com.example.javaniodemo.demo;
 
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.http.HttpUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.OutputStream;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,6 +65,27 @@ public class JavaHutoolBioDemo implements ApiRequest<String>{
     }
 
 
-
-
+    @Test
+    public void multiThreadServer() throws Exception {
+        HttpUtil.createServer(8080)
+                .addHandler("/", exchange -> {
+                    final byte[] body = "hello".getBytes();
+                    exchange.sendResponseHeaders(200, body.length);
+                    final OutputStream responseBody = exchange.getResponseBody();
+                    responseBody.write(body);
+                    responseBody.flush();
+                    exchange.close();
+                })
+                .addHandler("/delay5s", exchange -> {
+                    ThreadUtil.sleep(5000);
+                    final byte[] body = "hello".getBytes();
+                    exchange.sendResponseHeaders(200, body.length);
+                    final OutputStream responseBody = exchange.getResponseBody();
+                    responseBody.write(body);
+                    responseBody.flush();
+                    exchange.close();
+                })
+                .start();
+        new CountDownLatch(1).await();
+    }
 }
