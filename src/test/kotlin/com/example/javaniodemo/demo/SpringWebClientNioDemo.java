@@ -1,15 +1,23 @@
 package com.example.javaniodemo.demo;
 
 import io.netty.channel.nio.NioEventLoopGroup;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorResourceFactory;
+import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.server.HttpServer;
 
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -27,6 +35,7 @@ public class SpringWebClientNioDemo implements ApiRequest<Mono<String>>{
 
     @BeforeEach
     void setUp() {
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "2");
         webClient = singleThreadClient();
     }
 
@@ -106,6 +115,18 @@ public class SpringWebClientNioDemo implements ApiRequest<Mono<String>>{
                 });
         // 阻塞主线程到运行结束，实际服务端项目中不应该出现这个
         resultMono.block();
+    }
+
+    @SneakyThrows
+    @Test
+    public void singleThreadServer() {
+        final RouterFunction<ServerResponse> routerFunction = RouterFunctions.route()
+                .GET("/", request -> ServerResponse.ok().bodyValue("hello"))
+                .GET("/delay5s", request -> ServerResponse.ok().bodyValue("hello").delayElement(Duration.ofSeconds(5)))
+                .build();
+        ReactorHttpHandlerAdapter adapter = new ReactorHttpHandlerAdapter(RouterFunctions.toHttpHandler(routerFunction));
+        HttpServer.create().port(8080).handle(adapter).runOn(new NioEventLoopGroup(1)).bind().block();
+        new CountDownLatch(1).await();
     }
 
 }
